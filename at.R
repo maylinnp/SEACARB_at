@@ -11,11 +11,11 @@
 # Updates by May-Linn Paulsen (2021) for a) air-buoyancy correction, b) option to use NaCl-fortified or non-fortified HCl, and c) choice of pH scale. 
 
 # "at" <-
-  at <- function(S=35, T=25, C=0.1, Cunits="mol/kg-sol", d=1, NaCl ="yes", pHTris=NULL, ETris=NULL, weightSample, E, volume){
+  at <- function(S=35, T=25, C=0.1, d=1, NaCl ="yes", pHTris=NULL, ETris=NULL, weightSample, E, volume){
     
     # S : salinity in practical salinity units (constant)
     # T : temperature in deg. C (vector or constant)
-    # C : molonity of acid in (mol/kg-sol) (constant)
+    # C : molonity of acid in (mol/kg-sol?) (constant)
     # d : density of acid in g/cm^3 (constant)
     # pHTris : pH used for the calibration of the electrode  (constant)
     # ETris : voltage used for the calibration of the electrode, in mV (constant)
