@@ -11,11 +11,11 @@
 # Updates by May-Linn Paulsen (2021) for a) air-buoyancy correction, b) option to use NaCl-fortified or non-fortified HCl, and c) choice of pH scale. 
 
 # "at" <-
-  at <- function(S=35, T=25, C=0.1, d=1, NaCl ="yes", pHTris=NULL, ETris=NULL, weightSample, E, volume){
+  at <- function(S=35, T=25, C=0.1, HClunit="mol/L",d=1, NaCl="yes", pHtot="yes", pHTris=NULL, ETris=NULL, weightSample, E, volume){
     
     # S : salinity in practical salinity units (constant)
     # T : temperature in deg. C (vector or constant)
-    # C : molonity of acid in (mol/kg-sol?) (constant)
+    # C : concentration of acid in (units defined ) (constant)
     # d : density of acid in g/cm^3 (constant)
     # pHTris : pH used for the calibration of the electrode  (constant)
     # ETris : voltage used for the calibration of the electrode, in mV (constant)
@@ -57,6 +57,13 @@
     # ensure density of acid is appropriate for NaCl fortification choice 
     if(NaCl == "yes" | NaCl == "Yes" | NaCl == "Y" | NaCl == "YES" & d == 1){
       d = 1.024}
+    
+    if(HClunit != "mol/kg-sol" | HClunit != "mol/kg" | HClunit != "mol kg-1" | HClunit != "mol kg-sol-1"){
+      MMHCl <- 35.45+1.01 # molar mass of HCl
+      C <- C/(1+C*MMHCl) # converting from mol/L to mol/kg-sol
+      }
+    
+
     
     m <- z$volume*d*((1-(0.0012013/8))/(1-(0.0012013/d)))	# Mass of acid
     m0 <- weightSample*((1-(0.0012013/8))/(1-(0.0012013/dSample)))		# Mass of the sample
