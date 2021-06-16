@@ -11,7 +11,7 @@
 # Updates by May-Linn Paulsen (2021) for a) air-buoyancy correction, b) option to use NaCl-fortified or non-fortified HCl, and c) choice of pH scale. 
 
 # "at" <-
-  at <- function(S=35, T=25, C=0.1, HClunit="mol/L",d=1, NaCl="yes", pHtot="yes", pHTris=NULL, ETris=NULL, weightSample, E, volume){
+  at <- function(S=35, T=25, C=0.1, HClunit="mol/L",CNaCl=0, HCltemp=20, pHtot="yes", pHTris=NULL, ETris=NULL, weightSample, E, volume){
     
     # S : salinity in practical salinity units (constant)
     # T : temperature in deg. C (vector or constant)
@@ -32,10 +32,13 @@
     
     Tk <- T + 273.15
     
+    if (E[1]<= 1){
+      E = E*1000
+    }
+    
     # creation of a table p
     p <- data.frame(E=E, volume=volume, Tk=Tk)
     z <- p
-    
     # transform mV in pH (total scale)
     if(!is.null(pHTris)&!is.null(ETris)){
       pH <- pHTris + (ETris/1000-E/1000)/(R*Tk*log(10)/F)     
@@ -48,23 +51,27 @@
     }
     
     options(digits=9)
-    
+
     #convert from weight to mass using sample and HCl density
     dSample <- gsw_rho(S,T[1],0)/1000
-    # check if d, acid density, is in the right format    
-    if(d > 1000) {d = d / 1000}
-    
-    # ensure density of acid is appropriate for NaCl fortification choice 
-    if(NaCl == "yes" | NaCl == "Yes" | NaCl == "Y" | NaCl == "YES" & d == 1){
-      d = 1.024}
-    
-    if(HClunit != "mol/kg-sol" | HClunit != "mol/kg" | HClunit != "mol kg-1" | HClunit != "mol kg-sol-1"){
-      MMHCl <- 35.45+1.01 # molar mass of HCl
-      C <- C/(1+C*MMHCl) # converting from mol/L to mol/kg-sol
-      }
-    
+    MMHCl <- 35.45+1.01 # molar mass of HCl
+    if(HClunit == 'mol/L' | HClunit == 'mol L-1' | HClunit == 'mol/l' | HClunit == 'mol l-1'){
+      C <- C/(1000+C*MMHCl)*1000 }# converting from mol/L to mol/kg-sol
 
-    
+    # calculate titrant density based on NaCl fortification and titrant temperature 
+    if(CNaCl == 0){ #based on Handbook of CO2 meas, Dickson et al 2007, chapter 5, paragraph 4.4 
+      d = 1.0}
+      else {
+        MMNaCl<- 22.99 + 35.45
+        mHCl  <- C/(1000 - C*MMHCl - CNaCl*MMNaCl)*1000
+        mNaCl <- CNaCl/(1000 - C*MMNaCl - CNaCl*MMNaCl)*1000
+        gHCl  <- 17.854 + 1.460*sqrt(mHCl) - 0.307*mHCl
+        gNaCl <- 16.613 + 1.811*sqrt(mNaCl) + 0.094*mNaCl
+        gmix  <- ((mHCl*gHCl) + (mNaCl*gNaCl))/(mHCl + mNaCl)
+        mT    <- ((MMHCl*mHCl) + (MMNaCl*mNaCl))/(mHCl + mNaCl)
+        rhoW  <- (999.84847 + 6.337563*10**-2*HCltemp - 8.523829*10**-3*HCltemp**2 + 6.943248*10**-5*HCltemp**3 - 3.821216*10**-7*HCltemp**4)/1000
+        d     <- (rhoW*(10^3 + mT*(mHCl + mNaCl)))/(10^3 + gmix*(mHCl + mNaCl)*rhoW)
+      }
     m <- z$volume*d*((1-(0.0012013/8))/(1-(0.0012013/d)))	# Mass of acid
     m0 <- weightSample*((1-(0.0012013/8))/(1-(0.0012013/dSample)))		# Mass of the sample
 
@@ -75,7 +82,7 @@
     TA<-f$coefficients[1]*C/m0[1]
     E0est <- z$E/1000-(R*z$Tk/F)*log((-m0*TA+m*C)/(m0+m))
     Hprime <- exp((z$E/1000-E0est)/(R*z$Tk/F))
-    
+
     #non linear estimation:
     
     St <- (0.14/96.062)*(S/1.80655)
